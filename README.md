@@ -1,5 +1,5 @@
 # ABC
-Automatic Decision Maker
+ABC - Automatic Burndown Chart
 
 ### What is this Code about?
 The main purpose of this program is to be used as a project planner
