@@ -15,3 +15,12 @@ ABC - Automatic Burndown Chart
 ![](https://github.com/haseab/ABC/blob/master/image.png)
 
 The x-axis represents the work dates, and the y-axis represents the aggregate hours left in a project
+
+
+### The Different Classes
+
+- **Datahandler** - class that is able to read data, save data, check for changes in data, etc.
+- **BurndownChart** - class that creates a day by day plan of tasks to do, as well as creates a burndown chart, as well as updates the burndown chart
+
+
+## Example
