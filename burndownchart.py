@@ -228,36 +228,53 @@ class BurndownChart():
         return newXaxis, newYaxis, x1, line
 
     def _day_blocks(self, df, max_hours=max_hours):
+        """
+        Algorithm that takes tasks and fits them in an 8 hour workday. Tasks that do not fit are swapped with
+        tasks that can be completed that day.
+
+        Parameters:
+            df - dataframe that needs splitting. Note that this dataframe must have a column called ['ETA']
+            max_hours - max hours in a workweek
+        """
         lst2 = []
         freeze = 0
         a = df["ETA"]
         for i in range(len(a) + 1):
             df2 = df["ETA"].iloc
+            ##Checking to see if the cumulative hours in a day surpasses the max
             if df2[freeze:i].sum() > max_hours:
                 increment = 0
+                ##Checking if the next element will be under the max hours
                 if df2[freeze:i + increment + 1].drop(i - 1).sum() < max_hours:
+                    ##Keeps adding tasks until it surpasses the max
                     while df2[freeze:i + increment + 1].drop(i - 1).sum() < max_hours:
                         check = df2[freeze:i + increment + 1].drop(i - 1)
                         increment += 1
                         if check.equals(df2[freeze:i + increment + 1].drop(i - 1)):
                             break
                     temp = df.iloc[i - 1]
+                    ##Reorganizing the dataframe so that the block that was skipped gets added to the next set of data
                     df.iloc[i - 1:i + increment + 1] = df.iloc[i - 1:i + increment + 1].shift(-1).fillna(temp)
                     # print(df.iloc[i-1:i+increment+1])
+                    ##Adding the entire set of tasks within the hour limit to a list
                     lst2.append(df.iloc[freeze:i + increment - 1])
                     freeze = i + increment - 1
                 else:
                     lst2.append(df.iloc[freeze:i - 1])
                     freeze = i - 1
+        ##Add the remaining tasks to the end of the list
         lst2.append(df.iloc[freeze:])
         return lst2
 
     def _get_updated_path(self, instance, first_word, start_date,
                           path='/Users/owner/Desktop/Datasets/TaskIntegrator/*'):
-        """When making new copies of """
-        # Get proper naming
+        """This function is used to make sure that naming is not duplicated. It searches for the last file
+        that has the same name and increments the name by a value (v1, v2, ..) in order to avoid duplicates"""
+
+        # Get most recent file
         paths = instance._get_latest_file("Proposed", path)
 
+        # Looking for version number (v1,v2,v3)
         if paths[-7:-5] != " v":
             return "There is an issue with naming the file. There is no version label (vx)"
         if paths[-4:] == ".txt":
@@ -265,20 +282,25 @@ class BurndownChart():
         if paths[-4:] == ".csv":
             extension = ".csv"
 
+        ##Checking if dates are up to date
         assert len(
             pd.Series([i if str(datetime.now().year) in i else "Invalid" for i in paths.split(' ')]).drop_duplicates(
                 keep=False)) != 0, "Invalid Date Time on file"
         file_date = pd.Series(
             [i if str(datetime.now().year) in i else "Invalid" for i in paths.split(' ')]).drop_duplicates(keep=False)
 
+        ##Getting position of file in series as well as the date on the name of the file
         position, file_date = file_date.index[0], file_date.values[0]
 
+        # Turning date of file into a datetime object. Creating a datetime object out of the start_date too
         file_datetime = datetime.strptime(file_date, "%Y-%m-%d")
         start_datetime = datetime.strptime(start_date, "%Y-%m-%d")
 
+        # If the dates are the same, increment the version by 1
         if start_datetime == file_datetime:
             newpaths = paths[:-5] + str(int(paths[-5]) + 1) + extension
             return newpaths
+        # If the start date is after, create a new file name with version 1 (v1)
         elif start_datetime > file_datetime:
             pathslst = paths.split(' ')
             pathslst[position] = start_date
