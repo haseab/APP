@@ -6,7 +6,7 @@ from matplotlib.pyplot import figure
 
 
 class BurndownChart():
-    def new_plan(self, df, max_hours, start_date):
+    def see_new_plan(self, df, start_date, max_hours=8):
         """Algorithm that takes all tasks and breaks them up into different 8 hour days
            The discrete size of these tasks are preserved and are not split into the next day
 
@@ -37,100 +37,139 @@ class BurndownChart():
         data["Amount Left"] = list(data["ETA"].loc[::-1].cumsum().shift(1).fillna(0))[::-1]
         return data
 
-    def update_plan(self, max_hours, start_date, current_date=str(datetime.today().date() + timedelta(days=1))):
+    def save_new_plan(self, datahandler, plan):
+        """
+        function 'new_plan' must be run first in order to run this function. This is a wrapper to save it
 
-        path = self._get_latest_file("Proposed")
-        original = pd.read_csv(path).fillna('')
-        original["Day"] = pd.to_datetime(original["Day"])
-        original = original[original["Day"] < current_date]
-        original["Day"] = [i.strftime("%Y-%m-%d") for i in original["Day"]]
-        original = original.set_index('Task').drop("Amount Left", axis=1)
+        Paramaters:
+            plan - multi-index dataframe. Obtained from the 'new_plan' output
 
-        df = self.get_tasks().fillna('').set_index('Task')
-
-        for i in df.index:
-            if i in original.index:
-                df = df.drop(i)
-        original = original.reset_index()
-        df = df.reset_index()
-
-        new = self.new_plan(df, max_hours, current_date).reset_index().drop("Amount Left", axis=1)[1:]
-
-        original2 = original.append(new).reset_index(drop=True)
-        original2 = original2.set_index(["Day", "Task"])[["ETA", "Completed"]]
-        original2["Amount Left"] = list(original2["ETA"].loc[::-1].cumsum().shift(1).fillna(0))[::-1]
-
-        newpath = self._get_updated_path("Proposed", start_date)
-        inputs = input(f"File is about to be written to {newpath}. OK? (y/n):  ")
+        Returns:
+            str - string explain the filename of saved csv
+        """
+        # Searching for any file that might have a duplicate name
+        newpath = self._get_updated_path(datahandler, "Proposed", plan.index[0][0])
+        # Asking if you want to save
+        inputs = input(f"File is about to be written as '{newpath}'. OK? (y/n):  ")
         if inputs in ["Y", "y", "yes", "Yes", "YES", "YEs"]:
-            export = original2.reset_index().to_csv(newpath, index=False)
-            return original2
+            export = plan.reset_index().to_csv(newpath, index=False)
+            return plan.reset_index()
         else:
             return "Canceled operation"
-        export = original2.reset_index().to_csv(newpath, index=False)
-        return original2
 
-    def get_plan(self, instance, start_date):
+    def get_latest_plan(self, instance):
+        # Searches for most recently modified file with first word "Proposed"
         path = instance._get_latest_file("Proposed")
+        # loading csv
         original = pd.read_csv(path).fillna('')
+        # Returning it back in the original form 'see_new_plan' function had
         original = original.groupby(by=["Day", "Task"]).mean()
         # newpath = self._get_updated_path("CSV", start_date)
-        original.to_csv(f"CSV of Plan on {start_date} v{path[-5]}.csv")
+        #         original.to_csv(f"CSV of Plan on {start_date} v{path[-5]}.csv")
         return original
 
-    def create_burndown_chart(self, data, max_hours=8, start_date=datetime.now().strftime("%Y-%m-%d")):
+    def create_burndown_chart(self, data, max_hours=max_hours, start_date=datetime.now().strftime("%Y-%m-%d")):
+        # Setting boundaries of matplotlib chart
         figure(num=None, figsize=(8, 6), dpi=80, facecolor='w', edgecolor='k')
+        # x-values are the dates of the 'plan'
         xaxis = np.array(data.index.levels[0])
+        # y-values are the cumulative sum of hours under the 'Amount Left' column
         yaxis = [data.loc[i].iloc[0]["Amount Left"] for i in xaxis]
+        # labeling x-axis
         plt.xticks(rotation=90)
-        plt.bar(xaxis, yaxis)
+        # plotting bar graph
+        plt.bar(xaxis, yaxis, color='lightgray')
         print(f"Below is the Proposed Plan from {xaxis[0]} to {xaxis[-1]}, Average Velocity: {max_hours} hours per day")
         print(f"Plan Proposed on {str(datetime.now())[:19]}")
-        # Creating CSV Compatible Data
-        lst = [[i, j] for i, j in zip(xaxis, yaxis)]
-        # export = pd.DataFrame(lst, columns = ["X-axis","Y-axis"]).to_csv(f"bdc data plan on {start_date} {str(time.time())[-3:-1]}.csv", index=False)
+        #         #Creating CSV Compatible Data
+        #         lst =[[i,j] for i,j in zip(xaxis,yaxis)]
+        #         export = pd.DataFrame(lst, columns = ["X-axis","Y-axis"]).to_csv(f"bdc data plan on {start_date} {str(time.time())[-3:-1]}.csv", index=False)
         return (xaxis, yaxis)
 
-    def check_progress_bdc(self, start_date):
-        # Pulling both completed tasks and previous task list
-        # Checking what got completed and categorizing the changes
+    def check_progress(self, datahandler, start_date):
+        """
+        This functions, determines what items got completed on the task list, and superimposes
+        a line on top of the original burndown chart to show how current progress is going
 
-        df = self.update_tasks()[0]
+        -------------------------------------------------------------------
+
+        Parameters:
+            datahandler - instance of DataHandler class
+            start_date - start date of the project
+
+        Returns:
+            tuple - 4 arrays
+                x values of bdc
+                y values of bdc
+                x values of progress line
+                y values of progress line
+
+        """
+        ######### DETERMINING WHAT GOT COMPLETED #############
+
+        # Pulling latest to-do list file
+        df = datahandler.get_tasks_file(file=file)
+        # Filtering only 'to-do' tasks to one variable, and organized columns
         dffalse = df[df["Completed"] == False][["Task", "ETA", "Completed", "Day"]]
+        # Filtering only 'completed' tasks to one variable
         df2 = df[df["Completed"] == True][["Task", "ETA", "Completed", "Day"]]
-        df3 = self.get_tasks()[["Task", "ETA", "Completed", "Day"]]
+        # Getting non-updated to-do list file
+        df3 = datahandler.get_latest_tasks_file()[["Task", "ETA", "Completed", "Day"]]
+        df3false = df3[df3['Completed'] == False]
+        if '' in df3[df3['Completed'] == True]['Day'].values:
+            raise Exception("Task marked as true but it does not have a completion date!")
+
+        # Setting index of both dataframes by Task for easier searching
         df2 = df2.set_index("Task")
         df3 = df3.set_index("Task")
+        df3false = df3false.set_index("Task")
 
-        for i in df3.index:
+        # Iterating over non-updated to-do list to see if the to-do is marked completed in the other dataframe
+        # If a to do task is found to be complete on the newer list (df2), then the older task list will be updated (df3)
+        # Note df3false is only being iterated because it has no completed tasks, which allows us to see what was completed
+        for i in df3false.index:
             if i in df2.index:
                 df3.loc[i, "Completed"] = True
                 df3.loc[i, "Day"] = df2.loc[i, "Day"]
+        df3 = df3.reset_index()  # Reverting back to original index
 
-        df3.reset_index()
+        ######### FILTERING DATA AFTER STARTING DATE #############
+
+        # Splitting between completed and non-completed tasks
         tasks_left = df3[df3["Completed"] == False].reset_index().groupby(by=["Day", "Task"]).mean()
-        df3 = df3[df3["Completed"] == True]
+        tasks_comp = df3[df3["Completed"] == True]
 
-        df3["Day"] = pd.to_datetime(df3["Day"]).fillna('')
-        date = datetime.strptime(start_date, "%Y-%m-%d")
+        # Converting to datetime64 objects to prepare for comparison
+        tasks_comp.loc[:, "Day"] = pd.to_datetime(tasks_comp["Day"])
 
-        df3 = df3[df3["Day"] >= date]
-        df3["Day"] = [i.strftime("%Y-%m-%d") for i in df3["Day"]]
+        date = pd.to_datetime([start_date])
 
-        if len(df3) == 0:
+        # Comparison - filtering all dates that are after the start date
+        tasks_comp = tasks_comp[tasks_comp["Day"].values >= date.values[0]]
+
+        # Converting back to string objects instead of datetime64 objects
+        tasks_comp["Day"] = [i.strftime("%Y-%m-%d") for i in tasks_comp["Day"]]
+
+        # Checking if there's no new completed tasks
+        if len(tasks_comp) == 0:
             raise Exception("Empty Dataset!")
-        df3 = df3.reset_index().groupby(by=["Day", "Task"]).mean()
+        tasks_comp = tasks_comp.reset_index(drop=True).groupby(by=["Day", "Task"]).mean()
 
-        df3["Amount Left"] = np.array(list(df3["ETA"].loc[::-1].cumsum().shift(1).fillna(0))[::-1])
+        ######### PREPARING TO GRAPH #############
 
-        export = pd.read_csv(self._get_latest_file("Proposed")).fillna('').set_index(["Day", "Task"])
+        # Adding column 'Amount Left' to show reverse cumulative sum of the tasks.
+        tasks_comp["Amount Left"] = np.array(list(tasks_comp["ETA"].loc[::-1].cumsum().shift(1).fillna(0))[::-1])
+        # Getting Proposed plan to see how the original burndown chart looked like
+        export = pd.read_csv(datahandler._get_latest_file("Proposed")).fillna('').set_index(["Day", "Task"])
+        # Adjusting all reverse cumulative sum values of 'tasks_comp' so it matches that of the proposed plan
+        tasks_comp["Amount Left"] += export["ETA"].sum() - tasks_comp.iloc[0]["Amount Left"]
 
-        df3["Amount Left"] += export["ETA"].sum() - df3.iloc[0]["Amount Left"]
+        ########### GRAPHING DATA ####################
 
-        figure(num=None, figsize=(18, 6), dpi=80, facecolor='w', edgecolor='k')
-
+        # Grabbing the dates of the plan on the burndown chart
         xaxis = [i.strftime("%Y-%m-%d") for i in pd.date_range(export.index.levels[0][0], export.index.levels[0][-1])]
 
+        # Setting burndown chart y-axis values: Placeholder used to keep the bar graph at the same level if theres a day that has no assigned work
         yaxis = []
         placeholder = 0
         for i in xaxis:
@@ -140,31 +179,43 @@ class BurndownChart():
                 placeholder = export.loc[i].iloc[0]["Amount Left"]
                 yaxis.append(placeholder)
 
-        # yaxis = [export.loc[i].iloc[0]["Amount Left"] for i in xaxis]
-        newXaxis = df3.index.levels[0].values
+        # Setting x values of the completion line
+        newXaxis = tasks_comp.index.levels[0].values
+
+        # Getting corresponding y-values of line from x values
+        newYaxis = tasks_comp.loc[:, "Amount Left"].values
 
         # Fitting the line according to the day the first task was completed
+        ##Setting Datetimes of the line x values and of the start date
         xdatetime = [datetime.strptime(i, "%Y-%m-%d") for i in list(newXaxis)]
         startdatetime = datetime.strptime(start_date, "%Y-%m-%d")
+        ##Getting how many days after starting date tasks got completed
         shift = (min(xdatetime) - startdatetime).days
+        ##Getting total time since the start date
         ranged = (max(xdatetime) - min(xdatetime)).days
 
+        # Converting x values (which were dates (str)) into numerical values
         numx = np.array(xdatetime) - xdatetime[0] + timedelta(days=shift)
         numx = [i.days for i in numx]
-        newYaxis = [df3.loc[i].iloc[-1]["Amount Left"] for i in newXaxis]
 
         # Start plotting
-        plt.ylim(0, max(yaxis) + 10)
+
+        ##Creating Burndown velocity: the line of best fit of all data points so far
         c = np.polyfit(numx, newYaxis, 1)
         x1 = np.array(range(ranged + shift, len(xaxis)))
         line = c[0] * x1 + c[1]
 
-        plt.xticks(rotation=90)
-        plt.bar(xaxis, yaxis, color='lightgray')
-        plt.plot(newXaxis, newYaxis, linewidth=5, color="red")
-        plt.plot(x1, line, color='black', linewidth=3, linestyle=':')
+        # Plotting
+        ##Determing window size of matplotlib
+        fig = plt.figure(num=None, figsize=(10, 6), dpi=80, facecolor='w', edgecolor='k')
+        plt.ylim(0, max(yaxis) + 10)
+        plt.xticks(rotation=90, figure=fig)
+        plt.bar(xaxis, yaxis, color='lightgray', figure=fig)
+        plt.plot(newXaxis, newYaxis, linewidth=5, color="red", figure=fig)
+        plt.plot(x1, line, color='black', linewidth=3, linestyle=':', figure=fig)
         # plt.plot(numx,newYaxis,'o', color='red', markersize =10)
 
+        # Feedback on progess
         print(f"Below is the Current Progress for the dates {xaxis[0]} to {xaxis[-1]}")
         if newYaxis[len(newYaxis) - 1] < yaxis[len(newYaxis) - 1]:
             print(f"Good job!! You're ahead of schedule!")
@@ -174,9 +225,9 @@ class BurndownChart():
             print("Right on time! Keep it up")
         else:
             print("We're behind! We have to work faster!")
-        return (newXaxis, newYaxis, tasks_left)
+        return newXaxis, newYaxis, x1, line
 
-    def _day_blocks(self, df, max_hours=8):
+    def _day_blocks(self, df, max_hours=max_hours):
         lst2 = []
         freeze = 0
         a = df["ETA"]
@@ -201,10 +252,11 @@ class BurndownChart():
         lst2.append(df.iloc[freeze:])
         return lst2
 
-    def _get_updated_path(self, first_word, start_date, path='/Users/owner/Desktop/Datasets/TaskIntegrator/*'):
+    def _get_updated_path(self, instance, first_word, start_date,
+                          path='/Users/owner/Desktop/Datasets/TaskIntegrator/*'):
         """When making new copies of """
         # Get proper naming
-        paths = self._get_latest_file("Proposed", path)
+        paths = instance._get_latest_file("Proposed", path)
 
         if paths[-7:-5] != " v":
             return "There is an issue with naming the file. There is no version label (vx)"
