@@ -13,22 +13,35 @@ class DataHandler():
     def __init__(self):
         pass
 
-    def get_tasks(self, file=None):
+    def save_data(self, df):
+        dt = datetime.now()
+        file = f"Tasks {dt.year}_{dt.month}_{dt.day}_{dt.hour}.txt"
+        df.to_csv(file, index=False)
+        string = "Saved Data as: " + file
+        self.file = file
+        print(string)
+        return file
+
+    def get_tasks_file(self, file=None):
+        if file == None:
+            print("Please indicate the file location!")
+            return None
         df = pd.read_csv(file)
         df["Completed"] = [True if i == "Yes" else False for i in df["Completed"]]
         df = pd.concat([df[df["Completed"] == True], df[df["Completed"] == False]]).reset_index(drop=True)
         return df
 
-    def get_latest_tasks(self, file=None):
+    def get_latest_tasks_file(self, file=None):
         file = self._get_latest_file("Tasks")
         df = pd.read_csv(file)
-        #         df = df[df["Completed"]==True] + df[df["Completed"]==False]
         return df
 
-    def update_tasks(self):
-        df = self.get_tasks().fillna('')
-        ndf = self.get_updated_tasks()
-        ndf = self.sort_order(ndf)
+    def update_tasks(self, file=None):
+        if file == None:
+            print("Please enter the file you want for updates")
+            return None
+        df = self.get_latest_tasks_file().fillna('')
+        ndf = self.get_tasks_file(file)
         df2 = df.set_index("Task")
         ndf2 = ndf.set_index("Task")
         totalcount, counter2 = 0, 0
@@ -83,15 +96,14 @@ class DataHandler():
                 ndffalse = ndffalse.reset_index()
 
                 df3 = ndffalse.merge(ndftrue, how="outer").reset_index(drop=True).drop_duplicates(subset="Task")
-                df3 = self.sort_order(df3)
                 return df3, 0
 
             else:
                 print("Returning original dataset")
                 return df, 1
 
-    def update_tasks_to_csv(self):
-        df, count = self.update_tasks()
+    def update_tasks_to_csv(self, file=None):
+        df, count = self.update_tasks(file)
         if count == 1:
             print("Nothing was saved")
             return None
@@ -99,8 +111,10 @@ class DataHandler():
         return df, count
 
     def _data_change_tracker(self, df, ndf):
-        taskdf = df.merge(ndf, how="inner", on="Task").set_index("Task").drop(
-            ["Completed_x", "Completed_y", "Score_x", "Score_y"], axis=1)
+        if "Completed_x" in df.columns:
+            taskdf = df.merge(ndf, how="inner", on="Task").set_index("Task").drop(["Completed_x", "Completed_y", "Score_x", "Score_y"], axis=1)
+        else:
+            taskdf = df.merge(ndf, how="inner", on="Task").set_index("Task")
         col = taskdf.columns.values
         counter = 0
         for i in range(int(len(col) / 2)):
@@ -164,7 +178,6 @@ class DataHandler():
             return newpaths
         elif start_datetime < file_datetime:
             return "There is apparently a more recent proposed plan"
-
 
 
 
