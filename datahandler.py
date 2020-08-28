@@ -46,6 +46,7 @@ class DataHandler():
         df = pd.read_csv(file).fillna('')
         # Converting "Yes" and "No" Values into True and False Booleans instead
         df["Completed"] = [True if i == "Yes" else False for i in df["Completed"]]
+        df['Day'] = [str(i)[:10] for i in pd.to_datetime(df['Day']).fillna('')]
         # Putting all Completed Tasks first and then followed by Not Completed Tasks
         df = pd.concat([df[df["Completed"] == True], df[df["Completed"] == False]]).reset_index(drop=True)
         return df
@@ -62,6 +63,7 @@ class DataHandler():
         file = self._get_latest_file("Tasks")
         # Reading csv and filling Na values with blank strings
         df = pd.read_csv(file).fillna('')
+        df['Day'] = [str(i)[:10] for i in pd.to_datetime(df['Day']).fillna('')]
         return df
 
     def update_tasks(self, file=None):
