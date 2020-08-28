@@ -1,9 +1,16 @@
 # ABC
 ABC - Automatic Burndown Chart
 
-### Description
-- The main purpose of this program is to be used as a project planner. Please refer to the image below as a reference
+## What Problem is this Solving?
+I had a faced a problem many months ago that I wasn't able to finish my projects at the time that I required them. I would set a due date, but I would always overestimate the amount of work that I had to do, so I would waste more time leading up to the due date
 
+James clear says in his book Atomic Habits, 
+
+>"Many people think they lack motivation when what they really lack is clarity. It is not always obvious when and where to take action" This is the reason why this project was made. 
+
+The automatic burndown chart will give you consistent feedback on how much work is **to be** done, how much work **has** been done, how **fast** you are working and your **expected date of completion**, given how fast you work. If you have this burndown chart update continuously, the feedback will give you clarity on how behind you are, how ahead you are, etc.
+
+### Description
 - The program pulls a list of ordered actions, as well as their ETA. Then depending on whether priority of tasks matters, it uses a greedy algorithm to optimize for a 8 hour workday (or however long you work for). Then a scrum-style burndown chart is created (see below) and an expected date of termination will be provided. (in this case it is 2020-07-14)
 
 - This program can also track progress of those tasks by reading a column of "Completed" tasks and superimposing a line graph of current progress. (The red line in the picture)
