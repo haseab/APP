@@ -57,9 +57,9 @@ class BurndownChart():
         else:
             return "Canceled operation"
 
-    def get_latest_plan(self, instance):
+    def get_latest_plan(self, datahandler):
         # Searches for most recently modified file with first word "Proposed"
-        path = instance._get_latest_file("Proposed")
+        path = datahandler._get_latest_file("Proposed")
         # loading csv
         original = pd.read_csv(path).fillna('')
         # Returning it back in the original form 'see_new_plan' function had
@@ -67,6 +67,40 @@ class BurndownChart():
         # newpath = self._get_updated_path("CSV", start_date)
         #         original.to_csv(f"CSV of Plan on {start_date} v{path[-5]}.csv")
         return original
+
+    def update_plan(self, datahandler, start_date, current_date=str(datetime.today().date() + timedelta(days=1)),
+                    max_hours=max_hours, file=file):
+
+        path = datahandler._get_latest_file("Proposed")
+        original = pd.read_csv(path).fillna('')
+        original["Day"] = pd.to_datetime(original["Day"])
+        original = original[original["Day"] < current_date]
+        original["Day"] = [i.strftime("%Y-%m-%d") for i in original["Day"]]
+        original = original.set_index('Task').drop("Amount Left", axis=1)
+
+        df = datahandler.get_tasks_file(file).fillna('').set_index('Task')
+
+        for i in df.index:
+            if i in original.index:
+                df = df.drop(i)
+        original = original.reset_index()
+        df = df.reset_index()
+
+        new = self.new_plan(df, max_hours, current_date).reset_index().drop("Amount Left", axis=1)[1:]
+
+        original2 = original.append(new).reset_index(drop=True)
+        original2 = original2.set_index(["Day", "Task"])[["ETA", "Completed"]]
+        original2["Amount Left"] = list(original2["ETA"].loc[::-1].cumsum().shift(1).fillna(0))[::-1]
+
+        newpath = self._get_updated_path(datahandler, "Proposed", start_date)
+        inputs = input(f"File is about to be written as '{newpath}'. OK? (y/n):  ")
+        if inputs in ["Y", "y", "yes", "Yes", "YES", "YEs"]:
+            export = original2.reset_index().to_csv(newpath, index=False)
+            return original2
+        else:
+            return "Canceled operation"
+        export = original2.reset_index().to_csv(newpath, index=False)
+        return original2
 
     def create_burndown_chart(self, data, max_hours=max_hours, start_date=datetime.now().strftime("%Y-%m-%d")):
         # Setting boundaries of matplotlib chart
@@ -86,28 +120,22 @@ class BurndownChart():
         #         export = pd.DataFrame(lst, columns = ["X-axis","Y-axis"]).to_csv(f"bdc data plan on {start_date} {str(time.time())[-3:-1]}.csv", index=False)
         return (xaxis, yaxis)
 
-    def check_progress(self, datahandler, start_date):
+    def check_plan_progress(self, datahandler):
         """
-        This functions, determines what items got completed on the task list, and superimposes
-        a line on top of the original burndown chart to show how current progress is going
+        Compares the active to do list, with the proposed plan of the project and tracks what tasks have been completed
 
-        -------------------------------------------------------------------
-
-        Parameters:
+        Parameter:
             datahandler - instance of DataHandler class
-            start_date - start date of the project
 
         Returns:
-            tuple - 4 arrays
-                x values of bdc
-                y values of bdc
-                x values of progress line
-                y values of progress line
+            df3 - dataframe that has a list of updated tasks that are completed
 
         """
         ######### DETERMINING WHAT GOT COMPLETED #############
+        # Getting previous plan progress dataframe
+        dfcompare = pd.read_csv(datahandler._get_latest_file("Progress")).fillna('')
 
-        # Pulling latest to-do list file
+        # Getting latest to-do list file
         df = datahandler.get_tasks_file(file=file)
         # Filtering only 'to-do' tasks to one variable, and organized columns
         dffalse = df[df["Completed"] == False][["Task", "ETA", "Completed", "Day"]]
@@ -125,7 +153,7 @@ class BurndownChart():
         df3false = df3false.set_index("Task")
 
         # Iterating over non-updated to-do list to see if the to-do is marked completed in the other dataframe
-        # If a to do task is found to be complete on the newer list (df2), then the older task list will be updated (df3)
+        # If a to-do task is found to be complete on the newer list (df2), then the older task list will be updated (df3)
         # Note df3false is only being iterated because it has no completed tasks, which allows us to see what was completed
         for i in df3false.index:
             if i in df2.index:
@@ -133,27 +161,66 @@ class BurndownChart():
                 df3.loc[i, "Day"] = df2.loc[i, "Day"]
         df3 = df3.reset_index()  # Reverting back to original index
 
-        ######### FILTERING DATA AFTER STARTING DATE #############
-
-        # Splitting between completed and non-completed tasks
-        tasks_left = df3[df3["Completed"] == False].reset_index().groupby(by=["Day", "Task"]).mean()
-        tasks_comp = df3[df3["Completed"] == True]
-
         # Converting to datetime64 objects to prepare for comparison
-        tasks_comp.loc[:, "Day"] = pd.to_datetime(tasks_comp["Day"])
-
+        df3.loc[:, "Day"] = pd.to_datetime(df3["Day"])
+        # Getting the start date of the propsed plan and converting to datetime
+        start_date = pd.read_csv(datahandler._get_latest_file("Proposed")).loc[:, 'Day'][0]
         date = pd.to_datetime([start_date])
-
         # Comparison - filtering all dates that are after the start date
-        tasks_comp = tasks_comp[tasks_comp["Day"].values >= date.values[0]]
-
+        tasks_comp = df3[df3["Day"].values >= date.values[0]]
         # Converting back to string objects instead of datetime64 objects
-        tasks_comp["Day"] = [i.strftime("%Y-%m-%d") for i in tasks_comp["Day"]]
+        tasks_comp.loc[:, "Day"] = [i.strftime("%Y-%m-%d") for i in tasks_comp["Day"]]
+
+        tasks_todo = df3[df3["Completed"] == False].fillna('')
+        df3 = pd.concat([tasks_comp, tasks_todo])
 
         # Checking if there's no new completed tasks
-        if len(tasks_comp) == 0:
+        if len(df3) == 0:
             raise Exception("Empty Dataset!")
-        tasks_comp = tasks_comp.reset_index(drop=True).groupby(by=["Day", "Task"]).mean()
+        df3 = df3.reset_index(drop=True)
+        if (dfcompare == df3).all().all() == True and (df == datahandler.get_latest_tasks_file()).all().all() == True:
+            print("Nothing saved because no change in progress yet!")
+        else:
+            if (dfcompare == df3).all().all() == False:
+                dfcompare = df3
+                dfcompare.to_csv("Progress on Project started on 2020-09-10.txt", index=False)
+                print("New progress file saved as 'Progress on Project started on 2020-09-10.txt' ")
+
+            ###Searching for any file that might have a duplicate name
+            # Asking if you want to save
+            print("Task lists do not match, overwriting with new one....")
+            newpath = f"Tasks {datetime.now().year}_{datetime.now().month}_{datetime.now().day}_{datetime.now().hour}.txt"
+            inputs = input(f"File is about to be written as '{newpath}'. OK? (y/n):  ")
+            if inputs in ["Y", "y", "yes", "Yes", "YES", "YEs"]:
+                df.to_csv(newpath, index=False)
+                print(f"New progress file saved as '{newpath}'")
+            else:
+                print("Tasks were not saved")
+
+        return df3
+
+    def check_bdc_progress(self, datahandler):
+        """
+        This function superimposes a line on top of the original burndown chart to show visual progress
+
+        -------------------------------------------------------------------
+
+        Parameters:
+            datahandler - instance of DataHandler class
+
+        Returns:
+            tuple - 4 arrays
+                x values of bdc
+                y values of bdc
+                x values of progress line
+                y values of progress line
+
+        """
+        # Getting progress dataframe
+        df = pd.read_csv(datahandler._get_latest_file("Progress"))
+
+        ##Filtering only completed tasks and regrouping
+        task_comp = df[df["Completed"] == True].groupby(by=["Day", "Task"]).mean()
 
         ######### PREPARING TO GRAPH #############
 
@@ -235,6 +302,9 @@ class BurndownChart():
         Parameters:
             df - dataframe that needs splitting. Note that this dataframe must have a column called ['ETA']
             max_hours - max hours in a workweek
+
+        Returns:
+            lst2 - list of dataframes of tasks, one for each day
         """
         lst2 = []
         freeze = 0
@@ -266,13 +336,22 @@ class BurndownChart():
         lst2.append(df.iloc[freeze:])
         return lst2
 
-    def _get_updated_path(self, instance, first_word, start_date,
+    def _get_updated_path(self, datahandler, first_word, start_date,
                           path='/Users/owner/Desktop/Datasets/TaskIntegrator/*'):
         """This function is used to make sure that naming is not duplicated. It searches for the last file
-        that has the same name and increments the name by a value (v1, v2, ..) in order to avoid duplicates"""
+        that has the same name and increments the name by a value (v1, v2, ..) in order to avoid duplicates
+
+        Parameters:
+            datahandler - instance of DataHandler class
+            start_date - start date
+            path - The directory to be looking at
+
+        Returns:
+            str - If conditions are satisfied, it returns a string with a non-duplicate file name
+        """
 
         # Get most recent file
-        paths = instance._get_latest_file("Proposed", path)
+        paths = datahandler._get_latest_file(first_word, path)
 
         # Looking for version number (v1,v2,v3)
         if paths[-7:-5] != " v":
@@ -294,7 +373,7 @@ class BurndownChart():
 
         # Turning date of file into a datetime object. Creating a datetime object out of the start_date too
         file_datetime = datetime.strptime(file_date, "%Y-%m-%d")
-        start_datetime = datetime.strptime(start_date, "%Y-%m-%d")
+        start_datetime = pd.to_datetime(start_date).to_pydatetime()
 
         # If the dates are the same, increment the version by 1
         if start_datetime == file_datetime:
