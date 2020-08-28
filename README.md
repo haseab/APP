@@ -84,7 +84,7 @@ If there are no changes you should see <code>Data is identical. No Data changed<
 
 However if there **are** changes, then the following example will be seen:
 
-INSERT IMAGE
+![](https://github.com/haseab/ABC/blob/master/Github_datachange.png) 
 
 
 ### Creating/Getting Project Plan
@@ -127,6 +127,5 @@ bdc.check_bdc_progress(dhand)
 
 And if you did everything right, the following graph should be shown:
 
-INSERT IMAGE
 
 ![](https://github.com/haseab/ABC/blob/master/image.png)
