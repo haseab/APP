@@ -8,6 +8,7 @@ import time
 import glob
 import os
 
+path = os.getcwd() + '\\*'
 
 class DataHandler():
     def __init__(self):
@@ -45,7 +46,6 @@ class DataHandler():
         # Reading of CSV
         df = pd.read_csv(file).fillna('')
         # Converting "Yes" and "No" Values into True and False Booleans instead
-        df["Completed"] = [True if i == "Yes" else False for i in df["Completed"]]
         df['Day'] = [str(i)[:10] for i in pd.to_datetime(df['Day']).fillna('')]
         # Putting all Completed Tasks first and then followed by Not Completed Tasks
         df = pd.concat([df[df["Completed"] == True], df[df["Completed"] == False]]).reset_index(drop=True)
@@ -157,15 +157,11 @@ class DataHandler():
             inputs = input("Are you sure you want to continue with the above changes? y/n")
             if inputs in ["Y", "y", "yes", "Yes", "YES", "YEs"]:
                 print("Items added to new list!")
-                # Resetting the indices
-                dftrue = dftrue.reset_index()
-                ndftrue = ndftrue.reset_index()
-                dffalse = dffalse.reset_index()
-                ndffalse = ndffalse.reset_index()
 
-                # Merging completed and to-do list
-                df3 = ndffalse.merge(ndftrue, how="outer").reset_index(drop=True).drop_duplicates(subset="Task")
-                return df3, 0
+
+#                 # Merging completed and to-do list
+#                 df3 = ndftrue.merge(ndffalse, how="outer").reset_index(drop=True).drop_duplicates(subset="Task")
+                return ndf, 0
 
             else:
                 print("Returning original dataset")
@@ -214,7 +210,7 @@ class DataHandler():
             print("\nData is identical. No Data changed")
         return taskdf, counter
 
-    def _get_latest_file(self, first_word, path='/Users/owner/Desktop/Datasets/TaskIntegrator/*'):
+    def _get_latest_file(self, first_word, path=path):
         """Gets the name of the most recently modified .txt file in the directory.
             Parameters
                 first_word - the first word of the file. This is to minimize risk of picking a the wrong
@@ -226,16 +222,15 @@ class DataHandler():
         """
         list_of_files = glob.iglob(path)  # * means all if need specific format then *.csv
         latest_file = sorted(list_of_files, key=os.path.getctime)
-        latest_file = [i.split("\\")[1] for i in latest_file]  # Slicing
-
+        latest_file = [i.split("\\")[-1] for i in latest_file]  # Slicing
         # Gathering list of files that are under the first name
-        latest_file = [i for i in latest_file if i.split()[0] == first_word]
+        latest_file2 = [i for i in latest_file if first_word in i]
         #         inputs = input(f"File read was {latest_file[-1]}. Proceed? (y/n): ")
         #         if inputs in ["Y","y","yes","Yes","YES", "YEs"]:
         #             return latest_file[-1]
         #         else:
         #             return "Canceled operation"
 
-        if len(latest_file) == 0:
+        if len(latest_file2) == 0:
             return f"No files of word {first_word} in the path {path}"
-        return latest_file[-1]
+        return latest_file2[-1]

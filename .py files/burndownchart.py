@@ -3,9 +3,14 @@ import numpy as np
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
+import os
+
+max_hours = 6
+path = os.getcwd() + "\\*" # Getting the path to the current working directory
+file = "sample_todo_list.csv"
 
 class BurndownChart():
-    def see_new_plan(self, df, start_date, max_hours=8):
+    def see_new_plan(self, df, start_date, max_hours=max_hours):
         """Algorithm that takes all tasks and breaks them up into different 8 hour days
            The discrete size of these tasks are preserved and are not split into the next day
 
@@ -53,7 +58,8 @@ class BurndownChart():
         inputs = input(f"File is about to be written as '{newpath}'. OK? (y/n):  ")
         if inputs in ["Y", "y", "yes", "Yes", "YES", "YEs"]:
             plan.reset_index().to_csv(newpath, index=False)
-            datahandler.get_tasks_file(file).to_csv(f"Progress on Project started on {start_date}.txt", index=False)
+            df = datahandler.get_tasks_file(file)
+            df.to_csv(f"Progress on Project started on {start_date}.txt", index=False)
             print(f"Saved {newpath} as well as 'Progress on Project started on {start_date}.txt'")
             return plan.reset_index()
         else:
@@ -87,7 +93,7 @@ class BurndownChart():
         #         #Creating CSV Compatible Data
         #         lst =[[i,j] for i,j in zip(xaxis,yaxis)]
         #         export = pd.DataFrame(lst, columns = ["X-axis","Y-axis"]).to_csv(f"bdc data plan on {start_date} {str(time.time())[-3:-1]}.csv", index=False)
-        return (xaxis, yaxis)
+        return plt.show()
 
     def check_plan_progress(self, datahandler):
         """
@@ -174,6 +180,7 @@ class BurndownChart():
         """
         # Getting progress dataframe
         df = pd.read_csv(datahandler._get_latest_file("Progress")).fillna('')
+        df['Day'] = [str(i)[:10] for i in pd.to_datetime(df['Day']).fillna('')]
 
         ##Filtering only completed tasks and regrouping
         tasks_comp = df[df["Completed"] == True].groupby(by=["Day", "Task"]).mean()
@@ -249,6 +256,8 @@ class BurndownChart():
         else:
             print("We're behind! We have to work faster!")
 
+        plt.show()
+
     def _day_blocks(self, df, max_hours=max_hours):
         """
         Algorithm that takes tasks and fits them in an 8 hour workday. Tasks that do not fit are swapped with
@@ -291,8 +300,7 @@ class BurndownChart():
         lst2.append(df.iloc[freeze:])
         return lst2
 
-    def _get_updated_path(self, datahandler, first_word, start_date,
-                          path='/Users/owner/Desktop/Datasets/TaskIntegrator/*'):
+    def _get_updated_path(self, datahandler, first_word, start_date, path=path):
         """This function is used to make sure that naming is not duplicated. It searches for the last file
         that has the same name and increments the name by a value (v1, v2, ..) in order to avoid duplicates
 
@@ -309,6 +317,10 @@ class BurndownChart():
         paths = datahandler._get_latest_file(first_word, path)
 
         # Looking for version number (v1,v2,v3)
+        if paths.split(' ')[:2] == ['No','files']:
+            put = input("There is no previous file of this type: what do you want to call it? (without extension) ")
+            print(f"Okay saving it as {put} v1.txt")
+            return put + ' v1.txt'
         if paths[-7:-5] != " v":
             return "There is an issue with naming the file. There is no version label (vx)"
         if paths[-4:] == ".txt":
@@ -317,11 +329,8 @@ class BurndownChart():
             extension = ".csv"
 
         ##Checking if dates are up to date
-        assert len(
-            pd.Series([i if str(datetime.now().year) in i else "Invalid" for i in paths.split(' ')]).drop_duplicates(
-                keep=False)) != 0, "Invalid Date Time on file"
-        file_date = pd.Series(
-            [i if str(datetime.now().year) in i else "Invalid" for i in paths.split(' ')]).drop_duplicates(keep=False)
+        assert len(pd.Series([i if str(datetime.now().year) in i else "Invalid" for i in paths.split(' ')]).drop_duplicates(keep=False)) != 0, "Invalid Date Time on file"
+        file_date = pd.Series([i if str(datetime.now().year) in i else "Invalid" for i in paths.split(' ')]).drop_duplicates(keep=False)
 
         ##Getting position of file in series as well as the date on the name of the file
         position, file_date = file_date.index[0], file_date.values[0]
