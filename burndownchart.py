@@ -68,39 +68,6 @@ class BurndownChart():
         #         original.to_csv(f"CSV of Plan on {start_date} v{path[-5]}.csv")
         return original
 
-    def update_plan(self, datahandler, start_date, current_date=str(datetime.today().date() + timedelta(days=1)),
-                    max_hours=max_hours, file=file):
-
-        path = datahandler._get_latest_file("Proposed")
-        original = pd.read_csv(path).fillna('')
-        original["Day"] = pd.to_datetime(original["Day"])
-        original = original[original["Day"] < current_date]
-        original["Day"] = [i.strftime("%Y-%m-%d") for i in original["Day"]]
-        original = original.set_index('Task').drop("Amount Left", axis=1)
-
-        df = datahandler.get_tasks_file(file).fillna('').set_index('Task')
-
-        for i in df.index:
-            if i in original.index:
-                df = df.drop(i)
-        original = original.reset_index()
-        df = df.reset_index()
-
-        new = self.new_plan(df, max_hours, current_date).reset_index().drop("Amount Left", axis=1)[1:]
-
-        original2 = original.append(new).reset_index(drop=True)
-        original2 = original2.set_index(["Day", "Task"])[["ETA", "Completed"]]
-        original2["Amount Left"] = list(original2["ETA"].loc[::-1].cumsum().shift(1).fillna(0))[::-1]
-
-        newpath = self._get_updated_path(datahandler, "Proposed", start_date)
-        inputs = input(f"File is about to be written as '{newpath}'. OK? (y/n):  ")
-        if inputs in ["Y", "y", "yes", "Yes", "YES", "YEs"]:
-            export = original2.reset_index().to_csv(newpath, index=False)
-            return original2
-        else:
-            return "Canceled operation"
-        export = original2.reset_index().to_csv(newpath, index=False)
-        return original2
 
     def create_burndown_chart(self, data, max_hours=max_hours, start_date=datetime.now().strftime("%Y-%m-%d")):
         # Setting boundaries of matplotlib chart
