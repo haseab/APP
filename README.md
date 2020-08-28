@@ -70,7 +70,7 @@ df = dhand.get_tasks_file(file)
 
 My to-do list looks like this:
 
-![](https://github.com/haseab/ABC/blob/master/Github_todo.png) 
+![](https://github.com/haseab/ABC/blob/master/images/Github_todo.png) 
 
 
 ### Checking for Changes
@@ -84,7 +84,7 @@ If there are no changes you should see <code>Data is identical. No Data changed<
 
 However if there **are** changes, then the following example will be seen:
 
-![](https://github.com/haseab/ABC/blob/master/Github_datachange.png) 
+![](https://github.com/haseab/ABC/blob/master/images/Github_datachange.png) 
 
 
 ### Creating/Getting Project Plan
@@ -99,7 +99,7 @@ This plan will be a mult-indexed dataframe. It will show exactly what needs to b
 
 An example of the project plan looks like below
 
-![](https://github.com/haseab/ABC/blob/master/Github_projectplan.png) 
+![](https://github.com/haseab/ABC/blob/master/images/Github_projectplan.png) 
 
 If you ever needed to get this project plan again, but don't want to go through all of the steps again, just call it using the following code:
 <pre>
@@ -113,7 +113,7 @@ The burndown chart just needs one input: the plan. It will read the table and wi
 bdc.create_burndown_chart(plan)
 </pre>
 
-![](https://github.com/haseab/ABC/blob/master/github_bdc.png) 
+![](https://github.com/haseab/ABC/blob/master/images/Github_bdc.png) 
 
 
 ### Check Progress
@@ -128,4 +128,4 @@ bdc.check_bdc_progress(dhand)
 And if you did everything right, the following graph should be shown:
 
 
-![](https://github.com/haseab/ABC/blob/master/image.png)
+![](https://github.com/haseab/ABC/blob/master/images/Github_bdcprog.png)
