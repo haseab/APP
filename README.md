@@ -70,7 +70,7 @@ df = dhand.get_tasks_file(file)
 
 My to-do list looks like this:
 
-INSERT IMAGE 
+![](https://github.com/haseab/ABC/blob/master/Github_todo.png) 
 
 
 ### Checking for Changes
@@ -99,7 +99,7 @@ This plan will be a mult-indexed dataframe. It will show exactly what needs to b
 
 An example of the project plan looks like below
 
-INSERT IMAGE
+![](https://github.com/haseab/ABC/blob/master/Github_projectplan.png) 
 
 If you ever needed to get this project plan again, but don't want to go through all of the steps again, just call it using the following code:
 <pre>
@@ -113,7 +113,7 @@ The burndown chart just needs one input: the plan. It will read the table and wi
 bdc.create_burndown_chart(plan)
 </pre>
 
-INSERT IMAGE
+![](https://github.com/haseab/ABC/blob/master/Github_bdc.png) 
 
 
 ### Check Progress
