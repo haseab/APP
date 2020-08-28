@@ -53,9 +53,10 @@ The following below follows the example.py code, so if you have any issues, refe
 
 ### Initial Conditions
 To start, you need to choose a few initial conditions:
-1. <code>file</code> name. This file should reference the to-do list you use all the time (this can be outsourecd to an app as well)
-2. The max number of hours that you are willing to put in per day (<code>max_hours</code>)
-3. Your to-do list. It should have 4 main columns: <code> ['Completed', 'Task', 'ETA', 'Day']</code>
+1. <code>file</code> name. This file should reference the to-do list you use all the time (this can be outsourecd to an app as well). An example of a file name is <code>r"C:\Users\owner\Desktop\sample_todo_list.csv" </code>
+2. The max number of hours that you are willing to put in per day. Assign an integer to variable (<code>max_hours</code>)
+3. The start date of your project. Assign an string in format "YYYY-MM-DD" to the variable <code>start_date</code>
+4. Your to-do list. It should have 4 main columns: <code> ['Completed', 'Task', 'ETA', 'Day']</code>
     - **Completed**: <code>bool</code> - Whether you completed the task or not
     - **Task**     : <code>str</code>  - The task name
     - **ETA**      : <code>int</code>  - The Estimated Time of Completion of the task (use discrete numbers such as 1,2,3,4 etc.) Always overestimate ETA
