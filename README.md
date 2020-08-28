@@ -127,6 +127,6 @@ bdc.check_bdc_progress(dhand)
 
 And if you did everything right, the following graph should be shown:
 
-
 INSERT IMAGE
 
+![](https://github.com/haseab/ABC/blob/master/image.png)
