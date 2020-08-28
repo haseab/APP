@@ -113,7 +113,7 @@ The burndown chart just needs one input: the plan. It will read the table and wi
 bdc.create_burndown_chart(plan)
 </pre>
 
-![](https://github.com/haseab/ABC/blob/master/Github_bdc.png) 
+![](https://github.com/haseab/ABC/blob/master/github_bdc.png) 
 
 
 ### Check Progress
