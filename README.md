@@ -62,10 +62,11 @@ To start, you need to choose a few initial conditions:
     - **Day**      : <code>str</code>  - If the task is completed, it should be the date it was completed, if it is not completed, then it will show an empty string 
 
 ### Instantiation
-After that it is done, just instantiate the two classes
+After that it is done, just instantiate the two classes. The BurndownChart class needs a max_hours variable which you choose
+in the beginning. The DataHandler class needs a file to your to-do list
 <pre>
-bdc = BurndownChart()
-dhand = DataHandler()
+bdc = BurndownChart(max_hours)
+dhand = DataHandler(file)
 </pre>
 
 ### Reading To-Do List
