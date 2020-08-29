@@ -22,7 +22,7 @@ dhand = DataHandler(file)
 """ The Following Should only be run for the first run to initialize all files, after that, all you need to really
 do is just check your progress with the last two lines"""
 
-# # Getting to-do list table
+# Getting to-do list table
 # df = dhand.get_tasks_file(file)
 #
 # # Saving current state of to-do list to a .txt file (for future reference)
@@ -39,7 +39,7 @@ do is just check your progress with the last two lines"""
 # bdc.create_burndown_chart(plan)  # Gives a chart of burndown chart
 
 """Run The following once you've actually accomplished some tasks"""
-
+#
 progress = bdc.check_plan_progress(dhand)  # First run: Will say no change in progress
 
 bdc.check_bdc_progress(dhand) # First run: Will return same bdc as before

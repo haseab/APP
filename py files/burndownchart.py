@@ -132,8 +132,6 @@ class BurndownChart:
         # Getting latest to-do list file
         df = datahandler.get_tasks_file(self.file)[["Task", "ETA", "Completed", "Day"]]
 
-        # Filtering only 'completed' tasks to one variable
-        dftrue = df[df["Completed"] == True]
         # Getting non-updated to-do list file
         df3 = datahandler.get_latest_tasks_file()[["Task", "ETA", "Completed", "Day"]]
 
