@@ -14,8 +14,8 @@ file = "sample_todo_list.csv"  # Insert your own todolist
 start_date = "2020-09-10"  # Determine your own start date
 path = os.getcwd() + "\\*" # Getting the path to the current working directory
 
-bdc = BurndownChart()
-dhand = DataHandler()
+bdc = BurndownChart(max_hours)
+dhand = DataHandler(file)
 
 # Getting to-do list table
 df = dhand.get_tasks_file(file)
