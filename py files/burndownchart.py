@@ -123,7 +123,7 @@ class BurndownChart():
         ######### DETERMINING WHAT GOT COMPLETED #############
         # Getting previous plan progress dataframe
         dfcompare = pd.read_csv(datahandler._get_latest_file("Progress")).fillna('')[["Task", "ETA", "Completed", "Day"]]
-        dfcompare['Day'] = [str(i)[:10] for i in pd.to_datetime(df['Day']).fillna('')]
+        dfcompare['Day'] = [str(i)[:10] for i in pd.to_datetime(dfcompare['Day']).fillna('')]
         # Getting latest to-do list file
         df = datahandler.get_tasks_file(file=file)[["Task", "ETA", "Completed", "Day"]]
         # Filtering only 'to-do' tasks to one variable, and organized columns
@@ -156,7 +156,7 @@ class BurndownChart():
         start_date = pd.read_csv(datahandler._get_latest_file("Proposed")).loc[:, 'Day'][0]
         date = pd.to_datetime([start_date])
         # Comparison - filtering all dates that are after the start date
-        tasks_comp = df3[df3["Day"].values >= date.values[0]]
+        tasks_comp = df3[df3["Day"].values >= date.values[0]].copy()
         # Converting back to string objects instead of datetime64 objects
         tasks_comp.loc[:, "Day"] = [i.strftime("%#m/%d/%Y") for i in tasks_comp["Day"]]
 
@@ -332,9 +332,8 @@ class BurndownChart():
 
         # Looking for version number (v1,v2,v3)
         if paths.split(' ')[:2] == ['No','files']:
-            put = input("There is no previous file of this type: what do you want to call it? (without extension) ")
-            print(f"Okay saving it as {put} v1.txt")
-            return put + ' v1.txt'
+            print(f"Saving File as Proposed plan starting {start_date} v1.txt")
+            return f"Proposed plan starting {start_date} v1.txt"
         if paths[-7:-5] != " v":
             return "There is an issue with naming the file. There is no version label (vx)"
         if paths[-4:] == ".txt":
