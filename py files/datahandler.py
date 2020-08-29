@@ -8,7 +8,6 @@ import time
 import glob
 import os
 
-
 class DataHandler:
     def __init__(self, file):
         self.file = file
@@ -61,7 +60,7 @@ class DataHandler:
         # Calling function to get most recent file
         file = self._get_latest_file("Tasks")
         # Reading csv and filling Na values with blank strings
-        df = pd.read_csv(self.file).fillna('')
+        df = pd.read_csv(file).fillna('')
         df['Day'] = [str(i)[:10] for i in pd.to_datetime(df['Day']).fillna('')]
         return df
 
@@ -93,7 +92,7 @@ class DataHandler:
         # Getting cached task list, df (datframe)
         df = self.get_latest_tasks_file().fillna('')
         # Getting updating task list, ndf (new dataframe)
-        ndf = self.get_tasks_file(self.file)
+        ndf = self.get_tasks_file(file)
 
         # Creating a copy of both dataframes
         # Setting the index of both dataframes as the task for easier coding
@@ -173,7 +172,7 @@ class DataHandler:
         if file is None:
             file = self.file
 
-        df, count = self.update_tasks(self.file)
+        df, count = self.update_tasks(file)
         if count == 1:
             print("Nothing was saved")
             return None

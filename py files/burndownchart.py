@@ -39,8 +39,8 @@ class BurndownChart:
         data = pd.DataFrame([["", 0, True, date.strftime('%Y-%m-%d')]], columns=["Task", "ETA", "Completed", "Day"])
 
         # Converting date_range into a list of strings
-        dates = pd.date_range(date,date+timedelta(len(result)-1)).to_pydatetime()
-        dates = [datetime.strftime(i,'%Y-%m-%d') for i in dates]
+        dates = pd.date_range(date, date + timedelta(len(result) - 1)).to_pydatetime()
+        dates = [datetime.strftime(i, '%Y-%m-%d') for i in dates]
 
         # Appending the entire dataset back together, but counting how many tasks were in each day
         count = []
@@ -50,8 +50,8 @@ class BurndownChart:
 
         # Multiplying the dates by how many tasks were in each day
         dates_list = [dates[0]]
-        for i,j in zip(dates,range(len(count))):
-            dates_list.extend([i]*count[j])
+        for i, j in zip(dates, range(len(count))):
+            dates_list.extend([i] * count[j])
 
         # Adding list to date column
         data['Day'] = dates_list
@@ -96,7 +96,6 @@ class BurndownChart:
         #         original.to_csv(f"CSV of Plan on {start_date} v{path[-5]}.csv")
         return original
 
-
     def create_burndown_chart(self, data, max_hours=None):
         if max_hours is None:
             max_hours = self.max_hours
@@ -126,60 +125,35 @@ class BurndownChart:
             df3 - dataframe that has a list of updated tasks that are completed
 
         """
-        ######### DETERMINING WHAT TASKS GOT COMPLETED #############
         # Getting previous plan progress dataframe
-        dfcompare = pd.read_csv(datahandler._get_latest_file("Progress")).fillna('')[["Task", "ETA", "Completed", "Day"]]
-        dfcompare['Day'] = [str(i)[:10] for i in pd.to_datetime(dfcompare['Day']).fillna('')]
+        dfcompare = pd.read_csv(datahandler._get_latest_file("Proposed")).fillna('')[
+            ["Task", "ETA", "Completed", 'Day']].drop(0).reset_index(drop=True)
+
         # Getting latest to-do list file
         df = datahandler.get_tasks_file(self.file)[["Task", "ETA", "Completed", "Day"]]
-        # Filtering only 'to-do' tasks to one variable, and organized columns
-        dffalse = df[df["Completed"] == False]
+
         # Filtering only 'completed' tasks to one variable
-        df2 = df[df["Completed"] == True]
+        dftrue = df[df["Completed"] == True]
         # Getting non-updated to-do list file
         df3 = datahandler.get_latest_tasks_file()[["Task", "ETA", "Completed", "Day"]]
-        df3false = df3[df3['Completed'] == False]
+
+        # Merging both lists to see what has been completed
+        df3update = pd.merge(df, dfcompare, how='inner', on='Task').drop(['ETA_y', 'Completed_y'], axis=1)
+        df3update = df3update.rename(
+            columns={'ETA_x': 'ETA', 'Completed_x': 'Completed', 'Day_x': 'Day', 'Day_y': 'Proposed Day'})
+
+        start_date = pd.read_csv(datahandler._get_latest_file("Proposed")).fillna('').loc[:, 'Day'][0]
+
         if '' in df3[df3['Completed'] == True]['Day'].values:
             raise Exception("Task marked as true but it does not have a completion date!")
 
-        # Setting index of both dataframes by Task for easier searching
-        df2 = df2.set_index("Task")
-        df3 = df3.set_index("Task")
-        df3false = df3false.set_index("Task")
-
-        # Iterating over non-updated to-do list to see if the to-do is marked completed in the other dataframe
-        # If a task is found to be complete on the newer list (df2), then the older task list will be updated (df3)
-        # Note df3false is being iterated through, but we will mainly use df3 to make it's changes, not df3false
-        for i in df3false.index:
-            if i in df2.index:
-                df3.loc[i, "Completed"] = True
-                df3.loc[i, "Day"] = df2.loc[i, "Day"]
-        df3 = df3.reset_index()  # Reverting back to original index
-
-        # Converting to datetime64 objects to prepare for comparison
-        df3.loc[:, "Day"] = pd.to_datetime(df3["Day"])
-        # Getting the start date of the propsed plan and converting to datetime
-        start_date = pd.read_csv(datahandler._get_latest_file("Proposed")).loc[:, 'Day'][0]
-        date = pd.to_datetime([start_date])
-        # Comparison - filtering all dates that are after the start date
-        tasks_comp = df3[df3["Day"].values >= date.values[0]].copy()
-        # Converting back to string objects instead of datetime64 objects
-        tasks_comp.loc[:, "Day"] = [i.strftime("%#m/%d/%Y") for i in tasks_comp["Day"]]
-
-        tasks_todo = df3[df3["Completed"] == False].fillna('')
-        df3 = pd.concat([tasks_comp, tasks_todo])
-
         # Checking if there's no new completed tasks
-        if len(df3) == 0:
+        if len(df3update) == 0:
             raise Exception("Empty Dataset!")
-        df3 = df3.reset_index(drop=True)
-        if (dfcompare == df3).all().all():
-            print("Nothing saved because no change in progress yet!")
         else:
-            dfcompare = df3
-            dfcompare.to_csv(f"Progress on Project started on {start_date}.txt", index=False)
+            df3update.to_csv(f"Progress on Project started on {start_date}.txt", index=False)
             print("New progress file saved as 'Progress on Project started on 2020-09-10.txt'")
-        return df3
+            return df3update
 
     def check_bdc_progress(self, datahandler):
         """
@@ -199,8 +173,11 @@ class BurndownChart:
 
         """
         # Getting progress dataframe
-        df = pd.read_csv(datahandler._get_latest_file("Progress")).fillna('')
+        df = pd.read_csv(datahandler._get_latest_file("Progress")).fillna('').drop('Proposed Day',axis=1)
         df['Day'] = [str(i)[:10] for i in pd.to_datetime(df['Day']).fillna('')]
+
+        if set(df['Day']) == {''}:
+            raise Exception('Empty Date of Completion, you have not completed anything yet')
 
         # Filtering only completed tasks and regrouping
         tasks_comp = df[df["Completed"] == True].groupby(by=["Day", "Task"]).mean()
@@ -226,14 +203,14 @@ class BurndownChart:
             if i not in export.index.levels[0]:
                 yaxis.append(placeholder)
             else:
-                placeholder = export.loc[i,'Amount Left'][0]
+                placeholder = export.loc[i, 'Amount Left'][0]
                 yaxis.append(placeholder)
 
         # Setting x values of the completion line
         newXaxis = tasks_comp.index.levels[0].values
 
         # Getting corresponding y-values of line from x values
-        newYaxis =[tasks_comp.loc[i].loc[:,'Amount Left'][-1] for i in tasks_comp.index.levels[0].values]
+        newYaxis = [tasks_comp.loc[i].loc[:, 'Amount Left'][-1] for i in tasks_comp.index.levels[0].values]
 
         # Fitting the line according to the day the first task was completed
         ##Setting Datetimes of the line x values and of the start date
@@ -342,7 +319,7 @@ class BurndownChart:
         paths = datahandler._get_latest_file(first_word, path)
 
         # Looking for version number (v1,v2,v3)
-        if paths.split(' ')[:2] == ['No','files']:
+        if paths.split(' ')[:2] == ['No', 'files']:
             print(f"Saving File as Proposed plan starting {start_date} v1.txt")
             return f"Proposed plan starting {start_date} v1.txt"
         if paths[-7:-5] != " v":
@@ -353,8 +330,11 @@ class BurndownChart:
             extension = ".csv"
 
         # Checking if dates are up to date
-        assert len(pd.Series([i if str(datetime.now().year) in i else "Invalid" for i in paths.split(' ')]).drop_duplicates(keep=False)) != 0, "Invalid Date Time on file"
-        file_date = pd.Series([i if str(datetime.now().year) in i else "Invalid" for i in paths.split(' ')]).drop_duplicates(keep=False)
+        assert len(
+            pd.Series([i if str(datetime.now().year) in i else "Invalid" for i in paths.split(' ')]).drop_duplicates(
+                keep=False)) != 0, "Invalid Date Time on file"
+        file_date = pd.Series(
+            [i if str(datetime.now().year) in i else "Invalid" for i in paths.split(' ')]).drop_duplicates(keep=False)
 
         # Getting position of file in series as well as the date on the name of the file
         position, file_date = file_date.index[0], file_date.values[0]
