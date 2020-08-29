@@ -4,12 +4,15 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 import os
-max_hours = 6
-path = os.getcwd() + "\\*"  # Getting the path to the current working directory
-file = "sample_todo_list.csv"
 
-class BurndownChart():
-    def see_new_plan(self, df, start_date, max_hours=max_hours):
+
+class BurndownChart:
+    def __init__(self, max_hours):
+        self.max_hours = max_hours
+        self.path = os.getcwd() + "\\*"  # Getting the path to the current working directory
+        self.file = "sample_todo_list.csv"
+
+    def see_new_plan(self, df, start_date, max_hours=None):
         """Algorithm that takes all tasks and breaks them up into different 8 hour days
            The discrete size of these tasks are preserved and are not split into the next day
 
@@ -23,6 +26,9 @@ class BurndownChart():
             Returns:
                 data: dataframe of the each task grouped by date
         """
+        if max_hours is None:
+            max_hours = self.max_hours
+
         # Filtering only the incomplete tasks
         incomplete_tasks = df[df["Completed"] == False].reset_index(drop=True)[["Day", "Task", "ETA", "Completed"]]
         # Calling algorithm to split the tasks into a day blocks (list of dataframes, one for each day)
@@ -72,7 +78,7 @@ class BurndownChart():
         inputs = input(f"File is about to be written as '{new_path}'. OK? (y/n):  ")
         if inputs in ["Y", "y", "yes", "Yes", "YES", "YEs"]:
             plan.reset_index().to_csv(new_path, index=False)
-            df = datahandler.get_tasks_file(file)
+            df = datahandler.get_tasks_file(self.file)
             df.to_csv(f"Progress on Project started on {start_date}.txt", index=False)
             print(f"Saved {new_path} as well as 'Progress on Project started on {start_date}.txt'")
             return plan.reset_index()
@@ -91,7 +97,10 @@ class BurndownChart():
         return original
 
 
-    def create_burndown_chart(self, data, max_hours=max_hours):
+    def create_burndown_chart(self, data, max_hours=None):
+        if max_hours is None:
+            max_hours = self.max_hours
+
         # Setting boundaries of matplotlib chart
         figure(num=None, figsize=(8, 6), dpi=80, facecolor='w', edgecolor='k')
         # x-values are the dates of the 'plan'
@@ -122,7 +131,7 @@ class BurndownChart():
         dfcompare = pd.read_csv(datahandler._get_latest_file("Progress")).fillna('')[["Task", "ETA", "Completed", "Day"]]
         dfcompare['Day'] = [str(i)[:10] for i in pd.to_datetime(dfcompare['Day']).fillna('')]
         # Getting latest to-do list file
-        df = datahandler.get_tasks_file(file=file)[["Task", "ETA", "Completed", "Day"]]
+        df = datahandler.get_tasks_file(self.file)[["Task", "ETA", "Completed", "Day"]]
         # Filtering only 'to-do' tasks to one variable, and organized columns
         dffalse = df[df["Completed"] == False]
         # Filtering only 'completed' tasks to one variable
@@ -269,7 +278,7 @@ class BurndownChart():
 
         plt.show()
 
-    def _day_blocks(self, df, max_hours=max_hours):
+    def _day_blocks(self, df, max_hours=None):
         """
         Algorithm that takes tasks and fits them in an 8 hour workday. Tasks that do not fit are swapped with
         tasks that can be completed that day.
@@ -281,6 +290,9 @@ class BurndownChart():
         Returns:
             lst2 - list of dataframes of tasks, one for each day
         """
+        if max_hours is None:
+            max_hours = self.max_hours
+
         lst2 = []
         freeze = 0
         a = df["ETA"]
@@ -311,7 +323,7 @@ class BurndownChart():
         lst2.append(df.iloc[freeze:])
         return lst2
 
-    def _get_updated_path(self, datahandler, first_word, start_date, path=path):
+    def _get_updated_path(self, datahandler, first_word, start_date, path=None):
         """This function is used to make sure that naming is not duplicated. It searches for the last file
         that has the same name and increments the name by a value (v1, v2, ..) in order to avoid duplicates
 
@@ -323,6 +335,8 @@ class BurndownChart():
         Returns:
             str - If conditions are satisfied, it returns a string with a non-duplicate file name
         """
+        if path is None:
+            path = self.path
 
         # Get most recent file
         paths = datahandler._get_latest_file(first_word, path)

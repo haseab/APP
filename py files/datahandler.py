@@ -8,11 +8,11 @@ import time
 import glob
 import os
 
-path = os.getcwd() + '\\*'
 
-class DataHandler():
-    def __init__(self):
-        pass
+class DataHandler:
+    def __init__(self, file):
+        self.file = file
+        self.path = os.getcwd() + '\\*'
 
     def save_data(self, df):
         """
@@ -26,7 +26,6 @@ class DataHandler():
         file = f"Tasks {dt.year}_{dt.month}_{dt.day}_{dt.hour}.txt"
         df.to_csv(file, index=False)
         string = "Saved Data as: " + file
-        self.file = file
         print(string)
         return file
 
@@ -40,11 +39,11 @@ class DataHandler():
             df - dataframe object
         """
         # Check if file has been passed as an argument
-        if file == None:
-            print("Please indicate the file location!")
-            return None
+        if file is None:
+            file = self.file
+
         # Reading of CSV
-        df = pd.read_csv(file).fillna('')
+        df = pd.read_csv(self.file).fillna('')
         # Converting "Yes" and "No" Values into True and False Booleans instead
         df['Day'] = [str(i)[:10] for i in pd.to_datetime(df['Day']).fillna('')]
         # Putting all Completed Tasks first and then followed by Not Completed Tasks
@@ -62,7 +61,7 @@ class DataHandler():
         # Calling function to get most recent file
         file = self._get_latest_file("Tasks")
         # Reading csv and filling Na values with blank strings
-        df = pd.read_csv(file).fillna('')
+        df = pd.read_csv(self.file).fillna('')
         df['Day'] = [str(i)[:10] for i in pd.to_datetime(df['Day']).fillna('')]
         return df
 
@@ -88,13 +87,13 @@ class DataHandler():
             tuple of dataset with a counter
         """
         # Checking for argument being passed
-        if file == None:
-            print("Please enter the file you want for updates")
-            return None
+        if file is None:
+            file = self.file
+
         # Getting cached task list, df (datframe)
         df = self.get_latest_tasks_file().fillna('')
         # Getting updating task list, ndf (new dataframe)
-        ndf = self.get_tasks_file(file)
+        ndf = self.get_tasks_file(self.file)
 
         # Creating a copy of both dataframes
         # Setting the index of both dataframes as the task for easier coding
@@ -171,7 +170,10 @@ class DataHandler():
         """
         Wrapper function of "update_tasks" function. This one saves changes as a csv
         """
-        df, count = self.update_tasks(file)
+        if file is None:
+            file = self.file
+
+        df, count = self.update_tasks(self.file)
         if count == 1:
             print("Nothing was saved")
             return None
@@ -187,13 +189,7 @@ class DataHandler():
             Returns: Combined dataframe of both old and new dataframes
         """
 
-        # Checking if dataset is a weighted table with format ['Completed','Task','ETA',Context','Subsprint','Score','Day Completed']
-        # or if it is a regular table with format ['Completed','Task','ETA','Day Completed']
-        if "Completed_x" in df.columns:
-            taskdf = df.merge(ndf, how="inner", on="Task").set_index("Task").drop(
-                ["Completed_x", "Completed_y", "Score_x", "Score_y"], axis=1)
-        else:
-            taskdf = df.merge(ndf, how="inner", on="Task").set_index("Task")
+        taskdf = df.merge(ndf, how="inner", on="Task").set_index("Task")
         col = taskdf.columns.values
         counter = 0
         #
@@ -210,7 +206,7 @@ class DataHandler():
             print("\nData is identical. No Data changed")
         return taskdf, counter
 
-    def _get_latest_file(self, first_word, path=path):
+    def _get_latest_file(self, first_word, path=None):
         """Gets the name of the most recently modified .txt file in the directory.
             Parameters
                 first_word - the first word of the file. This is to minimize risk of picking a the wrong
@@ -220,6 +216,9 @@ class DataHandler():
             Returns:
                 the last element (most recent) of the list of file names
         """
+        if path is None:
+            path = self.path
+
         list_of_files = glob.iglob(path)  # * means all if need specific format then *.csv
         latest_file = sorted(list_of_files, key=os.path.getctime)
         latest_file = [i.split("\\")[-1] for i in latest_file]  # Slicing
