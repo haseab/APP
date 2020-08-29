@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import figure
 import os
-
 max_hours = 6
 path = os.getcwd() + "\\*" # Getting the path to the current working directory
 file = "sample_todo_list.csv"
@@ -32,10 +31,25 @@ class BurndownChart():
         date = pd.to_datetime(start_date).to_pydatetime()
         # Creating new DataFrame with initial line to show total sum of hours
         data = pd.DataFrame([["", 0, True, date.strftime('%Y-%m-%d')]], columns=["Task", "ETA", "Completed", "Day"])
-        # Iterating through the list of dataframes and adding consecutive days after the start date
+
+        #Converting date_range into a list of strings
+        dates = pd.date_range(date,date+timedelta(len(result)-1)).to_pydatetime()
+        dates = [datetime.strftime(i,'%Y-%m-%d') for i in dates]
+
+        #Appending the entire dataset back together, but counting how many tasks were in each day
+        count = []
         for i, j in zip(result, range(len(result))):
-            i.loc[:, "Day"] = [(date + timedelta(days=j)).strftime('%Y-%m-%d')] * len(i)
+            count.append(len(i))
             data = data.append(i)
+
+        # Mulitplying the dates by how many tasks were in each day
+        dates_list = [dates[0]]
+        for i,j in zip(dates,range(len(count))):
+            dates_list.extend([i]*count[j])
+
+        # Adding list to date column
+        data['Day'] = dates_list
+
         data = data.set_index(["Day", "Task"])
         # Creating Reverse cumulative series on ETA column
         data["Amount Left"] = list(data["ETA"].loc[::-1].cumsum().shift(1).fillna(0))[::-1]
@@ -109,7 +123,7 @@ class BurndownChart():
         ######### DETERMINING WHAT GOT COMPLETED #############
         # Getting previous plan progress dataframe
         dfcompare = pd.read_csv(datahandler._get_latest_file("Progress")).fillna('')[["Task", "ETA", "Completed", "Day"]]
-
+        dfcompare['Day'] = [str(i)[:10] for i in pd.to_datetime(df['Day']).fillna('')]
         # Getting latest to-do list file
         df = datahandler.get_tasks_file(file=file)[["Task", "ETA", "Completed", "Day"]]
         # Filtering only 'to-do' tasks to one variable, and organized columns
