@@ -17,8 +17,8 @@
 17.  [ ] proposed plans should be compared before a new one is made (for the sake of redundancy)
 
 ### Ideas:
-[ ] add option where the order of tasks is restricted so you cant swap
-[ ] add option where tasks spill into the next day
-[ ] allow the updating of a current burndown chart, in case more tasks are added in a given day
-[ ] decorators for saving data?
-[ ] make strptimes completely flexilbe and not rigid (so you can pass in anything without error)
+1. [ ] add option where the order of tasks is restricted so you cant swap
+2. [ ] add option where tasks spill into the next day
+3. [ ] allow the updating of a current burndown chart, in case more tasks are added in a given day
+4. [ ] decorators for saving data?
+5. [ ] make strptimes completely flexilbe and not rigid (so you can pass in anything without error)
