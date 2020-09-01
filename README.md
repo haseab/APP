@@ -5,7 +5,9 @@ I had a faced a problem many months ago that I wasn't able to finish my projects
 
 James clear says in his book Atomic Habits, 
 
->"Many people think they lack motivation when what they really lack is clarity. It is not always obvious when and where to take action" This is the reason why this project was made. 
+>"Many people think they lack motivation when what they really lack is clarity. It is not always obvious when and where to take action" 
+
+This is the reason why this project was made. 
 
 The automatic burndown chart will give you consistent feedback on how much work is **to be** done, how much work **has** been done, how **fast** you are working and your **expected date of completion**, given how fast you work. If you have this burndown chart update continuously, the feedback will give you clarity on how behind you are, how ahead you are, etc.
 
