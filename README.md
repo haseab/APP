@@ -20,7 +20,7 @@ The automatic burndown chart will give you consistent feedback on how much work 
   - [Instantiation](#Instantiation)
   - [Reading To-do list](#Reading-To-Do-List)
   - [Checking for Changes](#Checking-for-Changes)
-  - [Creating/Getting Project Plan](#Creating/Getting-Project-Plan)
+  - [Creating/Getting Project Plan](#Creating-Project-Plan)
   - [Creating Initial Burndown Chart](#Creating-Initial-Burndown-Chart)
   - [Check Progress](#Check-Progress)
 
@@ -114,7 +114,7 @@ However if there **are** changes, then the following example will be seen:
 ![](https://github.com/haseab/ABC/blob/master/images/Github_datachange.png) 
 
 
-### Creating/Getting Project Plan
+### Creating Project Plan
 In order to create a plan, you need the to-do-list, <code>df</code> as well as the <code>start_date</code>
 
 <pre>
