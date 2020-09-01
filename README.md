@@ -15,7 +15,7 @@ The automatic burndown chart will give you consistent feedback on how much work 
   - [The Different Classes](#The-Different-Classes)
   - [Caution](#Caution)
   
-- **[2. Example](#Description)**
+- **[2. Example](#Example)**
   - [Initial Conditions](#Initial-Conditions)
   - [Instantiation](#Instantiation)
   - [Reading To-do list](#Reading-To-Do-List)
