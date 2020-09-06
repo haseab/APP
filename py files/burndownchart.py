@@ -56,6 +56,7 @@ class BurndownChart:
         # Adding list to date column
         data['Day'] = dates_list
 
+        #Resetting index
         data = data.set_index(["Day", "Task"])
         # Creating Reverse cumulative series on ETA column
         data["Amount Left"] = list(data["ETA"].loc[::-1].cumsum().shift(1).fillna(0))[::-1]
