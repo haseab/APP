@@ -8,13 +8,19 @@ import os
 
 class BurndownChart:
     def __init__(self, max_hours):
+        # During instantiation, the user puts in their maximum hours they are willing to work per week
         self.max_hours = max_hours
-        self.path = os.getcwd() + "\\*"  # Getting the path to the current working directory
+        # Getting the path to the current working directory
+        self.path = os.getcwd() + "\\*"  
+        # To-do-list is assumed to be in the same folder as the code. If not, CHANGE this directory, or use an API
         self.file = "sample_todo_list.csv"
 
     def see_new_plan(self, df, start_date, max_hours=None):
-        """Algorithm that takes all tasks and breaks them up into different 8 hour days
-           The discrete size of these tasks are preserved and are not split into the next day
+        """Algorithm that takes all tasks and breaks them up into different 'max_hours' workdays (e.g 8 hours)
+           The discrete size of these tasks are preserved and are not split into the next day.
+           For example, if 7 hours have been assigned to one day and the next task is 2 hours long, 
+           then the entire task will be moved to another day instead of splitting it into 1 hour one day, 
+           and 1 hour another day
 
            The ETA column has a reverse cumulative sum setup so that hours are decreasing with
            every new line
@@ -26,6 +32,7 @@ class BurndownChart:
             Returns:
                 data: dataframe of the each task grouped by date
         """
+        #Gives opportunity for setting new max hours, if they choose not to, it automatically gives original hours
         if max_hours is None:
             max_hours = self.max_hours
 
@@ -33,27 +40,28 @@ class BurndownChart:
         incomplete_tasks = df[df["Completed"] == False].reset_index(drop=True)[["Day", "Task", "ETA", "Completed"]]
         # Calling algorithm to split the tasks into a day blocks (list of dataframes, one for each day)
         result = self._day_blocks(incomplete_tasks, max_hours)
-        # Converting date argument into a datetime object
+        # Converting date string into a 'datetime' object
         date = pd.to_datetime(start_date).to_pydatetime()
-        # Creating new DataFrame with initial line to show total sum of hours
+        # Creating new DataFrame. First row is task-less but will show the total cumulative hours
         data = pd.DataFrame([["", 0, True, date.strftime('%Y-%m-%d')]], columns=["Task", "ETA", "Completed", "Day"])
 
-        # Converting date_range into a list of strings
+        # Converting date_range objects into a list of date strings
         dates = pd.date_range(date, date + timedelta(len(result) - 1)).to_pydatetime()
         dates = [datetime.strftime(i, '%Y-%m-%d') for i in dates]
 
-        # Appending the entire dataset back together, but counting how many tasks were in each day
+        # Appending the entire dataset back together, but counting how many tasks were in each day 
+        # Each integer in the 'count' list represents a day, and the integer value represents how many tasks in that day
         count = []
         for i, j in zip(result, range(len(result))):
             count.append(len(i))
             data = data.append(i)
 
-        # Multiplying the dates by how many tasks were in each day
+        # Using 'count' variable to assign corresponding dates to the tasks.
         dates_list = [dates[0]]
         for i, j in zip(dates, range(len(count))):
             dates_list.extend([i] * count[j])
 
-        # Adding list to date column
+        # Replacing the column of dates with the new date list
         data['Day'] = dates_list
 
         #Resetting index
