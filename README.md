@@ -1,4 +1,4 @@
-# ABC - Automatic Burndown Chart Maker
+# APP - Automatic Project Planner
 
 ### What Problem is this Solving?
 I had a faced a problem many months ago that I wasn't able to finish my projects at the time that I required them. I would set a due date, but I would always overestimate the amount of work that I had to do, so I would waste more time leading up to the due date
