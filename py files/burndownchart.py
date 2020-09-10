@@ -72,7 +72,7 @@ class BurndownChart:
 
     def save_new_plan(self, datahandler, plan):
         """
-        function 'new_plan' must be run first in order to run this function. This is a wrapper to save it
+        method 'new_plan' must be run first in order to run this function.
 
         Paramaters:
             plan - multi-index dataframe. Obtained from the 'new_plan' output
