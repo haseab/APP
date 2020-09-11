@@ -1,4 +1,3 @@
-from notion.client import NotionClient
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
@@ -30,12 +29,12 @@ class DataHandler:
 
     def get_tasks_file(self, file=None):
         """
-        Reads the table from the file and sorts from Completed Tasks First
+        Reads the to-do list (which is in csv format) and then sorts from Completed Tasks First
         Parameters:
-            file - csv file that will be turned into a table
+            file - csv file that will be turned into a pandas DataFrame
 
         Returns:
-            df - dataframe object
+            df - pd.DataFrame object
         """
         # Check if file has been passed as an argument
         if file is None:
@@ -45,14 +44,17 @@ class DataHandler:
         df = pd.read_csv(self.file).fillna('')
         # Converting "Yes" and "No" Values into True and False Booleans instead
         df['Day'] = [str(i)[:10] for i in pd.to_datetime(df['Day']).fillna('')]
-        # Putting all Completed Tasks first and then followed by Not Completed Tasks
+        # Placing all Completed Tasks at the top of the list and then followed by Not Completed Tasks
         df = pd.concat([df[df["Completed"] == True], df[df["Completed"] == False]]).reset_index(drop=True)
         return df
 
     def get_latest_tasks_file(self):
         """
+        This method searches for the latest copy of the to-do list that was saved and returns it
+        (Note it does not return the current version, but the last copied version)
+        
         Instead of passing an argument of the file name, it uses the os module
-        to deterine the most recently modified txt file in the folder and uses that
+        to determine the most recently modified txt file in the folder and returns that
 
         Returns:
             df - dataframe
@@ -61,6 +63,7 @@ class DataHandler:
         file = self._get_latest_file("Tasks")
         # Reading csv and filling Na values with blank strings
         df = pd.read_csv(file).fillna('')
+        # Converting date list into datetime objects, and then back into strings (for standardization)
         df['Day'] = [str(i)[:10] for i in pd.to_datetime(df['Day']).fillna('')]
         return df
 
