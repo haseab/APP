@@ -117,7 +117,7 @@ However if there **are** changes, then the following example will be seen:
 
 
 ### Creating Project Plan
-In order to create a plan, you need the to-do-list, <code>df</code> as well as the <code>start_date</code>
+In order to create a plan, you need the to-do-list file, <code>df</code> as well as the <code>start_date</code>
 
 <pre>
 plan = bdc.see_new_plan(df,start_date)
