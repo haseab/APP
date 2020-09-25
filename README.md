@@ -97,7 +97,7 @@ Now you can start to read the to-do list by using the <code>dhand</code> instanc
 df = dhand.get_tasks_file(file)
 </pre>
 
-My to-do list looks like this:
+My To-do list looks like the following:
 
 ![](https://github.com/haseab/ABC/blob/master/images/Github_todo.png) 
 
