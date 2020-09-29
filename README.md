@@ -111,7 +111,7 @@ dhand.update_tasks(file)
 
 If there are no changes you should see <code>Data is identical. No Data changed</code>
 
-However if there **are** changes, then the following example will be seen:
+However if there **are** changes, then the following output will be seen:
 
 ![](https://github.com/haseab/ABC/blob/master/images/Github_datachange.png) 
 
