@@ -158,7 +158,7 @@ bdc.check_bdc_progress(dhand)
 And if you did everything right, the following graph should be shown:
 
 
-![](https://github.com/haseab/ABC/blob/master/images/)
+![](https://github.com/haseab/ABC/blob/master/images/Github_check.jpg)
 
 
 ### Actual Project of Mine
