@@ -158,3 +158,10 @@ And if you did everything right, the following graph should be shown:
 
 
 ![](https://github.com/haseab/ABC/blob/master/images/Github_bdcprog.png)
+
+
+### Actual Project of Mine
+
+Below is an image of an actual project that I had, And as you can see with my initial rate of completing work, I was expected to finish almost a month before than I expected! 
+
+![](https://github.com/haseab/ABC/blob/master/images/image.png)
