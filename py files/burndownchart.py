@@ -10,7 +10,7 @@ class BurndownChart:
     def __init__(self, max_hours):
         # During instantiation, the user puts in their maximum hours they are willing to work per week
         self.max_hours = max_hours
-        # Getting the path to the current working directory
+        # Getting the path to the current working directoryM
         self.path = os.getcwd() + "\\*"  
         # To-do-list is assumed to be in the same folder as the code. If not, CHANGE this directory, or use an API
         self.file = "sample_todo_list.csv"
